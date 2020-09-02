@@ -34,12 +34,11 @@ export default class RHSView extends React.PureComponent {
     onMessage(message) {
         this.setState({message});
     }
-    submit() {
+    submit(e) {
+        e.preventDefault();
 		add(this.state.message, this.state.selectedList);
 		this.setState({
-			selectedList: [],
-            message: null,
-            options: this.state.options,
+            message: '',
 		});
     }
     render() {
@@ -96,7 +95,7 @@ export default class RHSView extends React.PureComponent {
                 <Modal.Footer>
                     <Button
                         variant='success'
-                        onClick={() => this.submit()}
+                        onClick={(e) => this.submit(e)}
                     // eslint-disable-next-line react/jsx-no-literals
                     >Send Message</Button>
                 </Modal.Footer>

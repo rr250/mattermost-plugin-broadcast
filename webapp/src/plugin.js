@@ -28,7 +28,7 @@ class BroadcastPlugin extends Component {
             // dropdown_text - string or JSX element shown for the dropdown button description
             <FormattedMessage
                 id='plugin.name'
-                defaultMessage='BroadCast'
+                defaultMessage='Broadcast'
             />,
         );
     }

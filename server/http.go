@@ -27,27 +27,28 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var item *Broadcast
-	decoder := json.NewDecoder(req.Body)
-	err := decoder.Decode(&item)
+	err := json.NewDecoder(req.Body).Decode(&item)
 	if err != nil {
 		p.API.LogError("Unable to decode JSON err=" + err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	for _, reciept_id := range item.Usersid {
+	for _, recieverID := range item.Usersid {
 
-		channel, _ := p.API.GetDirectChannel(userID, reciept_id)
+		channel, err := p.API.GetDirectChannel(userID, recieverID)
+		if err != nil {
+			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
+		}
 		postModel := &model.Post{
 			UserId:    userID,
 			ChannelId: channel.Id,
 			Message:   item.Message,
 		}
-		_, err := p.API.CreatePost(postModel)
+		_, err = p.API.CreatePost(postModel)
 
 		if err != nil {
 			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
-
 		}
 	}
 }
