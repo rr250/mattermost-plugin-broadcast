@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable indent */
 import React from 'react';
@@ -7,36 +8,52 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 
-import {add} from '../actions';
+import {broadcast} from '../actions';
 
 export default class RHSView extends React.PureComponent {
     constructor(props) {
         super(props);
-        var options = [];
+        var options1 = [];
         // eslint-disable-next-line react/prop-types
         Object.values(this.props.team).forEach((user) => {
-            options.push({name: user.username, id: user.id});
+            options1.push({name: user.username, id: user.id});
+        });
+        var options2 = [];
+        // eslint-disable-next-line react/prop-types
+        Object.values(this.props.channels).forEach((channel) => {
+            if (channel.type !== 'D') {
+                options2.push({name: channel.name, id: channel.id});
+            }
         });
         this.state = {
-            options,
-            selectedList: [],
+            options1,
+            options2,
+            selectedList1: [],
+            selectedList2: [],
             message: null,
         };
     }
 
-    onSelect(selectedList, selectedItem) {
-        this.setState({selectedList: [...this.state.selectedList, selectedItem]});
+    onSelect1(selectedList1, selectedItem) {
+        this.setState({selectedList1: [...this.state.selectedList1, selectedItem]});
     }
 
-    onRemove(selectedList, removedItem) {
-        this.setState({selectedList: this.state.selectedList.filter((selectedItem) => selectedItem !== removedItem)});
+    onRemove1(selectedList1, removedItem) {
+        this.setState({selectedList1: this.state.selectedList1.filter((selectedItem) => selectedItem !== removedItem)});
+    }
+    onSelect2(selectedList2, selectedItem) {
+        this.setState({selectedList2: [...this.state.selectedList2, selectedItem]});
+    }
+
+    onRemove2(selectedList2, removedItem) {
+        this.setState({selectedList2: this.state.selectedList2.filter((selectedItem) => selectedItem !== removedItem)});
     }
     onMessage(message) {
         this.setState({message});
     }
     submit(e) {
         e.preventDefault();
-		add(this.state.message, this.state.selectedList);
+        broadcast(this.state.message, this.state.selectedList1, this.state.selectedList2);
 		this.setState({
             message: '',
 		});
@@ -52,12 +69,26 @@ export default class RHSView extends React.PureComponent {
                             defaultMessage='Select Users'
                         />
                         <Multiselect
-                            options={this.state.options} // Options to display in the dropdown
-                            selectedValues={this.state.selectedList} // Preselected value to persist in dropdown
-                            onSelect={(selectedList, selectedItem) => this.onSelect(selectedList, selectedItem)} // Function will trigger on select event
-                            onRemove={(selectedList, selectedItem) => this.onRemove(selectedList, selectedItem)} // Function will trigger on remove event
-                            displayValue='name' // Property name to display in the dropdown options
+                            options={this.state.options1} // Options to display in the dropdown
+                            selectedValues={this.state.selectedList1} // Preselected value to persist in dropdown
+                            onSelect={(selectedList1, selectedItem) => this.onSelect1(selectedList1, selectedItem)} // Function will trigger on select event
+                            onRemove={(selectedList1, selectedItem) => this.onRemove1(selectedList1, selectedItem)} // Function will trigger on remove event
+                            displayValue='name' // Property name to display in the dropdown options1
                             placeholder='Select Users'
+                            closeOnSelect={false}
+
+                            // showCheckbox={true} //checkbox inactive
+                            avoidHighlightFirstOption={true}
+                        />
+                        <br/>
+                        <br/>
+                        <Multiselect
+                            options={this.state.options2} // Options to display in the dropdown
+                            selectedValues={this.state.selectedList2} // Preselected value to persist in dropdown
+                            onSelect={(selectedList2, selectedItem) => this.onSelect2(selectedList2, selectedItem)} // Function will trigger on select event
+                            onRemove={(selectedList2, selectedItem) => this.onRemove2(selectedList2, selectedItem)} // Function will trigger on remove event
+                            displayValue='name' // Property name to display in the dropdown options1
+                            placeholder='Select Channels'
                             closeOnSelect={false}
 
                             // showCheckbox={true} //checkbox inactive

@@ -26,16 +26,32 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var item *Broadcast
-	err := json.NewDecoder(req.Body).Decode(&item)
+	var broadcast *Broadcast
+	err := json.NewDecoder(req.Body).Decode(&broadcast)
 	if err != nil {
 		p.API.LogError("Unable to decode JSON err=" + err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	userIDmap := make(map[string]struct{})
+	var exists = struct{}{}
+	for _, userID := range broadcast.UserIdList {
+		userIDmap[userID] = exists
+	}
 
-	for _, recieverID := range item.Usersid {
+	for _, channelID := range broadcast.ChannelIdList {
 
+		channelStats, err := p.API.GetChannelStats(channelID)
+		if err != nil {
+			p.API.LogError("Unable to get channel stats" + err.Error())
+		}
+		channelUsers, err := p.API.GetUsersInChannel(channelID, "username", 0, int(int64(channelStats.MemberCount)+channelStats.GuestCount))
+
+		for _, user := range channelUsers {
+			userIDmap[user.Id] = exists
+		}
+	}
+	for recieverID := range userIDmap {
 		channel, err := p.API.GetDirectChannel(userID, recieverID)
 		if err != nil {
 			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
@@ -43,12 +59,13 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 		postModel := &model.Post{
 			UserId:    userID,
 			ChannelId: channel.Id,
-			Message:   item.Message,
+			Message:   broadcast.Message,
 		}
 		_, err = p.API.CreatePost(postModel)
 
 		if err != nil {
 			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
 		}
+
 	}
 }

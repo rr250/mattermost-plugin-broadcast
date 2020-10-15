@@ -19,7 +19,7 @@ class BroadcastPlugin extends Component {
             RHSView,
             <FormattedMessage
                 id='plugin.name'
-                defaultMessage='BroadCast'
+                defaultMessage='Broadcast'
             />);
         registry.registerChannelHeaderButtonAction(
             // icon - JSX element to use as the button's icon
