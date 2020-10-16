@@ -12,6 +12,7 @@ import (
 func (p *Plugin) InitAPI() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/broadcast", p.broadcast).Methods("POST")
+	r.HandleFunc("/getallusersinteam", p.getAllUsersInTeam).Methods("POST")
 	return r
 }
 
@@ -46,7 +47,9 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 			p.API.LogError("Unable to get channel stats" + err.Error())
 		}
 		channelUsers, err := p.API.GetUsersInChannel(channelID, "username", 0, int(int64(channelStats.MemberCount)+channelStats.GuestCount))
-
+		if err != nil {
+			p.API.LogError("Unable to get users in channel" + err.Error())
+		}
 		for _, user := range channelUsers {
 			userIDmap[user.Id] = exists
 		}
@@ -54,7 +57,7 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 	for recieverID := range userIDmap {
 		channel, err := p.API.GetDirectChannel(userID, recieverID)
 		if err != nil {
-			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
+			p.API.LogError("Unable to create direct channel -- err=" + err.Error())
 		}
 		postModel := &model.Post{
 			UserId:    userID,
@@ -68,4 +71,26 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 		}
 
 	}
+
+}
+
+func (p *Plugin) getAllUsersInTeam(w http.ResponseWriter, req *http.Request) {
+	userID := req.Header.Get("Mattermost-User-ID")
+	if userID == "" {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+	var team *Team
+	err := json.NewDecoder(req.Body).Decode(&team)
+	if err != nil {
+		p.API.LogError("Unable to decode JSON err=" + err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userList, err1 := p.API.GetUsersInTeam(team.TeamID, 0, 100000)
+	if err1 != nil {
+		p.API.LogError("Unable to get users in team" + err1.Error())
+	}
+	p.API.LogInfo("", userList)
+	json.NewEncoder(w).Encode(userList)
 }

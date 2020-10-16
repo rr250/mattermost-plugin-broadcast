@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable no-console */
 /* eslint-disable react/jsx-filename-extension */
 /* eslint-disable indent */
@@ -8,18 +9,17 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 
-import {broadcast} from '../actions';
+import {broadcast, getAllUsersInCurrentTeam} from '../actions';
 
 export default class RHSView extends React.PureComponent {
     constructor(props) {
         super(props);
         var options1 = [];
-        // eslint-disable-next-line react/prop-types
-        Object.values(this.props.team).forEach((user) => {
-            options1.push({name: user.username, id: user.id});
-        });
+
+        // Object.values(this.props.team).forEach((user) => {
+        //     options1.push({name: user.username, id: user.id});
+        // });
         var options2 = [];
-        // eslint-disable-next-line react/prop-types
         Object.values(this.props.channels).forEach((channel) => {
             if (channel.type !== 'D') {
                 options2.push({name: channel.name, id: channel.id});
@@ -32,6 +32,17 @@ export default class RHSView extends React.PureComponent {
             selectedList2: [],
             message: null,
         };
+    }
+
+    componentDidMount() {
+        getAllUsersInCurrentTeam(this.props.currentTeamId).then((users) => {
+            var options1 = [];
+            Object.values(users).forEach((user) => {
+                options1.push({name: user.username, id: user.id});
+            });
+            console.log(options1);
+            this.setState({options1});
+        });
     }
 
     onSelect1(selectedList1, selectedItem) {
@@ -53,6 +64,9 @@ export default class RHSView extends React.PureComponent {
     }
     submit(e) {
         e.preventDefault();
+
+        // console.log(this.props.users);
+        console.log(this.props.state);
         broadcast(this.state.message, this.state.selectedList1, this.state.selectedList2);
 		this.setState({
             message: '',

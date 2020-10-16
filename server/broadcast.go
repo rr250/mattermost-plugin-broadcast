@@ -5,3 +5,7 @@ type Broadcast struct {
 	UserIdList    []string `json:"userIdList"`
 	ChannelIdList []string `json:"channelIdList"`
 }
+
+type Team struct {
+	TeamID string `json:"teamId"`
+}
