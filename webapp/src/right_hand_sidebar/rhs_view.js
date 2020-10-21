@@ -9,7 +9,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Modal from 'react-bootstrap/Modal';
 
-import {broadcast, getAllUsersInCurrentTeam} from '../actions';
+import {broadcast, getAllUsersInTeam} from '../actions';
 
 export default class RHSView extends React.PureComponent {
     constructor(props) {
@@ -22,7 +22,7 @@ export default class RHSView extends React.PureComponent {
         var options2 = [];
         Object.values(this.props.channels).forEach((channel) => {
             if (channel.type !== 'D') {
-                options2.push({name: channel.name, id: channel.id});
+                options2.push({name: channel.display_name + ' (url:/' + channel.name + ')', id: channel.id});
             }
         });
         this.state = {
@@ -35,12 +35,12 @@ export default class RHSView extends React.PureComponent {
     }
 
     componentDidMount() {
-        getAllUsersInCurrentTeam(this.props.currentTeamId).then((users) => {
+        console.log(this.props.theme);
+        getAllUsersInTeam(this.props.currentTeamId).then((users) => {
             var options1 = [];
             Object.values(users).forEach((user) => {
                 options1.push({name: user.username, id: user.id});
             });
-            console.log(options1);
             this.setState({options1});
         });
     }
@@ -64,9 +64,6 @@ export default class RHSView extends React.PureComponent {
     }
     submit(e) {
         e.preventDefault();
-
-        // console.log(this.props.users);
-        console.log(this.props.state);
         broadcast(this.state.message, this.state.selectedList1, this.state.selectedList2);
 		this.setState({
             message: '',
@@ -93,6 +90,9 @@ export default class RHSView extends React.PureComponent {
 
                             // showCheckbox={true} //checkbox inactive
                             avoidHighlightFirstOption={true}
+                            style={{option: { // To change css for dropdown options
+                                color: this.props.theme.sidebarHeaderTextColor, background: this.props.theme.sidebarHeaderBg,
+                            }}}
                         />
                         <br/>
                         <br/>
@@ -107,15 +107,13 @@ export default class RHSView extends React.PureComponent {
 
                             // showCheckbox={true} //checkbox inactive
                             avoidHighlightFirstOption={true}
+                            style={{option: { // To change css for dropdown options
+                                color: this.props.theme.sidebarHeaderTextColor, background: this.props.theme.sidebarHeaderBg,
+                            }}}
                         />
                     </div>
                     <br/>
                     <br/>
-                    <br/>
-                    <br/>
-                    <br/>
-                    <br/>
-
                     <div>
                         <Form.Group controlId='exampleForm.ControlTextarea1'>
                             <FormattedMessage
@@ -139,6 +137,7 @@ export default class RHSView extends React.PureComponent {
                 <br/>
                 <Modal.Footer>
                     <Button
+                        style={{color: this.props.theme.buttonColor, background: this.props.theme.buttonBg, border: 0}}
                         variant='success'
                         onClick={(e) => this.submit(e)}
                     // eslint-disable-next-line react/jsx-no-literals

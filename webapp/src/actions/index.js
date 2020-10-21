@@ -18,13 +18,7 @@ export const broadcast = async (message, userList, channelList) => {
     }));
 };
 
-export const getAllUsersInTeam = (teamId) => {
-    getAllUsersInCurrentTeam(teamId).then((users) => {
-        return users;
-    });
-};
-
-export const getAllUsersInCurrentTeam = async (teamId) => {
+export const getAllUsersInTeam = async (teamId) => {
     const userListPromise = await fetch(window.location.origin + '/plugins/' + pluginId + '/getallusersinteam', Client4.getOptions({
         method: 'post',
         body: JSON.stringify({teamId}),
