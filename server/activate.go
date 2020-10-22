@@ -19,5 +19,6 @@ func (p *Plugin) OnActivate() error {
 	if cronErr != nil {
 		return errors.Wrap(cronErr, "failed to schedule background job")
 	}
+	p.backgroundJob = job
 	return nil
 }

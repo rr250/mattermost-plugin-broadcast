@@ -79,17 +79,21 @@ func (p *Plugin) GetRecentBroadcast() (BroadcastSummary, interface{}) {
 		if err3 := json.Unmarshal(bytes, &broadcastSummaryList); err3 != nil {
 			return broadcastSummary, fmt.Sprintf("failed to unmarshal %s", err3)
 		}
-		broadcastSummary := broadcastSummaryList[0]
-		broadcastSummaryList = broadcastSummaryList[1:]
-		broadcastsJSON, err := json.Marshal(broadcastSummaryList)
-		if err != nil {
-			p.API.LogError("failed to marshal broadcasts  %s", broadcastSummaryList)
-			return broadcastSummary, fmt.Sprintf("failed to marshal broadcasts  %s", broadcastSummaryList)
-		}
-		err3 := p.API.KVSet("broadcasts", broadcastsJSON)
-		if err3 != nil {
-			p.API.LogError("failed KVSet", err3, broadcastsJSON)
-			return broadcastSummary, fmt.Sprintf("failed KVSet %s", err3)
+		if len(broadcastSummaryList) > 0 {
+			broadcastSummary = broadcastSummaryList[0]
+			broadcastSummaryList = broadcastSummaryList[1:]
+			broadcastsJSON, err := json.Marshal(broadcastSummaryList)
+			if err != nil {
+				p.API.LogError("failed to marshal broadcasts  %s", broadcastSummaryList)
+				return broadcastSummary, fmt.Sprintf("failed to marshal broadcasts  %s", broadcastSummaryList)
+			}
+			err3 := p.API.KVSet("broadcasts", broadcastsJSON)
+			if err3 != nil {
+				p.API.LogError("failed KVSet", err3, broadcastsJSON)
+				return broadcastSummary, fmt.Sprintf("failed KVSet %s", err3)
+			}
+		} else {
+			return broadcastSummary, "No Broadcast found"
 		}
 
 	} else {

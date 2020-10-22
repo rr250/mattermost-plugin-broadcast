@@ -83,17 +83,20 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 		userIDList = append(userIDList, userID)
 	}
 	broadcast1.UserIdList = userIDList
+	broadcast1.SenderUserID = userID
+	broadcast1.Message = broadcast.Message
+	broadcast1.ChannelIdList = broadcast.ChannelIdList
 	p.AddBroadcast(broadcast1)
 }
 
 func (p *Plugin) sendBroadcast() {
 	broadcastSummary, err1 := p.GetRecentBroadcast()
 	if err1 != nil {
-		p.API.LogError("Unable to Broadcast -- err=" + err1.(string))
+		p.API.LogError(err1.(string))
 	}
 	broadcast, err2 := p.GetBroadcast(broadcastSummary.BroadcastID)
 	if err2 != nil {
-		p.API.LogError("Unable to Broadcast -- err=" + err2.(string))
+		p.API.LogError(err2.(string))
 	}
 	for _, recieverID := range broadcast.UserIdList {
 		channel, err := p.API.GetDirectChannel(broadcast.SenderUserID, recieverID)
