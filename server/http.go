@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -11,13 +12,34 @@ import (
 
 func (p *Plugin) InitAPI() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/broadcast", p.broadcast).Methods("POST")
 	r.HandleFunc("/getallusersinteam", p.getAllUsersInTeam).Methods("POST")
+	r.HandleFunc("/broadcast", p.broadcast).Methods("POST")
 	return r
 }
 
 func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
 	p.router.ServeHTTP(w, r)
+}
+
+func (p *Plugin) getAllUsersInTeam(w http.ResponseWriter, req *http.Request) {
+	userID := req.Header.Get("Mattermost-User-ID")
+	if userID == "" {
+		http.Error(w, "Not authorized", http.StatusUnauthorized)
+		return
+	}
+	var team *Team
+	err := json.NewDecoder(req.Body).Decode(&team)
+	if err != nil {
+		p.API.LogError("Unable to decode JSON err=" + err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userList, err1 := p.API.GetUsersInTeam(team.TeamID, 0, 100000)
+	if err1 != nil {
+		p.API.LogError("Unable to get users in team" + err1.Error())
+	}
+	p.API.LogInfo("", userList)
+	json.NewEncoder(w).Encode(userList)
 }
 
 func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
@@ -54,43 +76,41 @@ func (p *Plugin) broadcast(w http.ResponseWriter, req *http.Request) {
 			userIDmap[user.Id] = exists
 		}
 	}
-	for recieverID := range userIDmap {
-		channel, err := p.API.GetDirectChannel(userID, recieverID)
+	var broadcast1 Broadcast
+	broadcast1.ID = model.NewId()
+	userIDList := make([]string, 0, len(userIDmap))
+	for userID := range userIDmap {
+		userIDList = append(userIDList, userID)
+	}
+	broadcast1.UserIdList = userIDList
+	p.AddBroadcast(broadcast1)
+}
+
+func (p *Plugin) sendBroadcast() {
+	broadcastSummary, err1 := p.GetRecentBroadcast()
+	if err1 != nil {
+		p.API.LogError("Unable to Broadcast -- err=" + err1.(string))
+	}
+	broadcast, err2 := p.GetBroadcast(broadcastSummary.BroadcastID)
+	if err2 != nil {
+		p.API.LogError("Unable to Broadcast -- err=" + err2.(string))
+	}
+	for _, recieverID := range broadcast.UserIdList {
+		channel, err := p.API.GetDirectChannel(broadcast.SenderUserID, recieverID)
 		if err != nil {
 			p.API.LogError("Unable to create direct channel -- err=" + err.Error())
 		}
-		postModel := &model.Post{
-			UserId:    userID,
-			ChannelId: channel.Id,
-			Message:   broadcast.Message,
+		for i := 0; i < 1000; i++ {
+			postModel := &model.Post{
+				UserId:    broadcast.SenderUserID,
+				ChannelId: channel.Id,
+				Message:   fmt.Sprintf("%d", i),
+			}
+			_, err3 := p.API.CreatePost(postModel)
+
+			if err3 != nil {
+				p.API.LogError("Unable to Broadcast -- err=" + err3.Error())
+			}
 		}
-		_, err = p.API.CreatePost(postModel)
-
-		if err != nil {
-			p.API.LogError("Unable to Broadcast -- err=" + err.Error())
-		}
-
 	}
-
-}
-
-func (p *Plugin) getAllUsersInTeam(w http.ResponseWriter, req *http.Request) {
-	userID := req.Header.Get("Mattermost-User-ID")
-	if userID == "" {
-		http.Error(w, "Not authorized", http.StatusUnauthorized)
-		return
-	}
-	var team *Team
-	err := json.NewDecoder(req.Body).Decode(&team)
-	if err != nil {
-		p.API.LogError("Unable to decode JSON err=" + err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	userList, err1 := p.API.GetUsersInTeam(team.TeamID, 0, 100000)
-	if err1 != nil {
-		p.API.LogError("Unable to get users in team" + err1.Error())
-	}
-	p.API.LogInfo("", userList)
-	json.NewEncoder(w).Encode(userList)
 }
